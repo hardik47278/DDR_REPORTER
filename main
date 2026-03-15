@@ -1,0 +1,107 @@
+import os
+import json
+
+from extraction import main as run_extraction_pipeline
+from confidence import compute_severity_and_confidence
+from generation import generate_ddr
+from evaluator import evaluate_ddr
+
+
+# -------------------------
+# Helper: Safe File Read
+# -------------------------
+def load_text_file(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Missing file: {path}")
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+# -------------------------
+# Helper: Ensure Output Dir
+# -------------------------
+def ensure_output_folder():
+    os.makedirs("outputs", exist_ok=True)
+
+
+# -------------------------
+# Main Pipeline
+# -------------------------
+def run_pipeline():
+    print("🚀 Starting DDR Generation Pipeline...")
+    ensure_output_folder()
+
+    # ---- Load DDR Prompt ----
+    ddr_prompt = load_text_file("prompts/ddr_prompt.txt")
+
+    # ---------------------------------------------------
+    # STEP 1: Extraction + merge
+    # This runs extraction.py, which already creates:
+    #   outputs/inspection_extracted.json
+    #   outputs/thermal_extracted.json
+    #   outputs/merged_ddr_data.json
+    # ---------------------------------------------------
+    print("📄 Running extraction + merge pipeline...")
+    run_extraction_pipeline()
+
+    merged_json_path = os.path.join("outputs", "merged_ddr_data.json")
+    if not os.path.exists(merged_json_path):
+        raise FileNotFoundError(f"Missing merged JSON: {merged_json_path}")
+
+    with open(merged_json_path, "r", encoding="utf-8") as f:
+        merged_json = json.load(f)
+
+    print("🔗 Merged structured evidence loaded")
+
+    # ---------------------------------------------------
+    # STEP 2: Confidence + Severity Scoring
+    # ---------------------------------------------------
+    scored_json = compute_severity_and_confidence(merged_json)
+
+    scored_json_path = os.path.join("outputs", "scored_merged_ddr_data.json")
+    with open(scored_json_path, "w", encoding="utf-8") as f:
+        json.dump(scored_json, f, indent=2, ensure_ascii=False)
+
+    print(f"✅ Scored JSON saved: {scored_json_path}")
+
+    # ---------------------------------------------------
+    # STEP 3: Generate DDR
+    # ---------------------------------------------------
+    final_report = generate_ddr(scored_json, ddr_prompt)
+
+    final_report_path = os.path.join("outputs", "final_ddr.md")
+    with open(final_report_path, "w", encoding="utf-8") as f:
+        f.write(final_report)
+
+    print(f"📝 DDR report generated: {final_report_path}")
+
+    # ---------------------------------------------------
+    # STEP 4: Evaluate DDR
+    # ---------------------------------------------------
+    evaluation = evaluate_ddr(scored_json, final_report)
+
+    evaluation_path = os.path.join("outputs", "evaluation.json")
+    with open(evaluation_path, "w", encoding="utf-8") as f:
+        json.dump(evaluation, f, indent=2, ensure_ascii=False)
+
+    print(f"🛡️ Evaluation complete: {evaluation_path}")
+    print("Evaluation Result:", evaluation)
+
+    # ---- Optional Warning ----
+    if evaluation.get("hallucination") is True:
+        print("⚠️ WARNING: Possible hallucination detected.")
+
+    if evaluation.get("missing_rule_violation") is True:
+        print("⚠️ WARNING: Missing data rule may have been violated.")
+
+    if evaluation.get("conflict_ignored") is True:
+        print("⚠️ WARNING: Conflict may have been ignored in DDR.")
+
+    print("✅ Pipeline Finished Successfully!")
+
+
+# -------------------------
+# Entry Point
+# -------------------------
+if __name__ == "__main__":
+    run_pipeline()
