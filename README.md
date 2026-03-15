@@ -1,75 +1,27 @@
-# 🏠 AI Detailed Diagnostic Report (DDR) Generator — Vision Hybrid Pipeline
+# 🏠 AI Detailed Diagnostic Report (DDR) Generator
 
-An AI-powered system that automatically generates **Detailed Diagnostic Reports (DDR)** for property inspections by combining:
+An AI-powered pipeline that automatically generates **Detailed Diagnostic Reports (DDR)** for property inspections by combining vision LLMs, deterministic reasoning, and a hallucination evaluation layer.
 
-- Inspection report PDF (text + images)
-- Thermal imaging report PDF
-- Vision LLM structured extraction
-- Deterministic reasoning (severity + confidence scoring)
-- Guardrailed DDR generation
-- Hallucination evaluation layer
+---
 
-This project follows a **Reliability-First Hybrid AI Architecture** where structured evidence is extracted first and then reasoning + report generation are performed.
+## 🧠 How It Works
 
-🧠 Stage-Wise Explanation
+The system follows a **Reliability-First Hybrid AI Architecture** — structured evidence is extracted first, then reasoning and report generation are performed on top of it.
 
-1. Input Documents
-The system accepts two PDFs:
-- Inspection Report (contains visual observations and checklist findings)
-- Thermal Imaging Report (contains thermal scan evidence)
-
-2. PDF Page Conversion
-Each PDF page is converted into high-resolution images using pdftoppm.
-This enables multimodal AI models to analyze visual layout, tables, and photos.
-
-3. Vision-LLM Structured Evidence Extraction
-A multimodal LLM processes page images and extracts structured JSON including:
-- Property information
-- Area-wise inspection observations
-- Thermal scan readings
-- Device metadata
-
-4. Evidence Alignment & Merge Layer
-Inspection evidence and thermal evidence are aligned using location hints,
-surface context, and keyword similarity to create unified area-wise evidence.
-
-5. Rule-Based Severity & Confidence Scoring
-A deterministic reasoning layer assigns:
-- severity_level (Low / Medium / High)
-- confidence_score (0–1)
-based on structural keywords, moisture indicators, thermal anomalies, and conflicts.
-
-6. Guardrailed DDR Report Generation
-An LLM generates a client-ready Detailed Diagnostic Report using strict rules:
-- Use only structured evidence
-- Do not hallucinate
-- Clearly mark missing information
-- Mention conflicts explicitly
-
-7. AI Safety Evaluator
-A second LLM validates the generated DDR by checking:
-- hallucinated facts
-- ignored missing data
-- ignored evidence conflicts
-and produces an evaluation JSON.
-
-🏗️ System Design Summary (Professional Paragraph)
-
-This system implements a reliability-first hybrid AI architecture for automated property diagnostic reporting. 
-It combines multimodal document understanding using Vision-LLMs with deterministic reasoning layers to ensure 
-structured evidence extraction, explainable severity scoring, and guardrailed report generation. A secondary 
-AI evaluator further validates report fidelity, reducing hallucination risk. The modular pipeline design 
-supports scalability, human-in-the-loop correction, and potential integration into production inspection workflows.
-
-
-
-
-
+| Stage | Description |
+|-------|-------------|
+| **1. Input** | Accepts two PDFs: an Inspection Report and a Thermal Imaging Report |
+| **2. PDF → Images** | Each page is converted to high-resolution images via `pdftoppm` |
+| **3. Vision LLM Extraction** | Multimodal LLM extracts structured JSON: property info, area observations, thermal readings |
+| **4. Evidence Merge** | Inspection + thermal evidence aligned by location, surface context, and keyword similarity |
+| **5. Severity Scoring** | Deterministic layer assigns `severity_level` (Low/Medium/High) and `confidence_score` (0–1) |
+| **6. DDR Generation** | Guardrailed LLM generates a client-ready report using only structured evidence |
+| **7. Safety Evaluator** | Second LLM validates the DDR for hallucinations, missing data, and conflicts |
 
 ---
 
 ## 🚀 Pipeline Architecture
-
+```
 Inspection PDF + Thermal PDF
         ↓
 PDF → Page Images (pdftoppm)
@@ -78,130 +30,122 @@ Vision LLM Structured Extraction
         ↓
 Inspection JSON + Thermal JSON
         ↓
-Evidence Merge
+Evidence Merge Layer
         ↓
 Deterministic Severity + Confidence Scoring
         ↓
-DDR Generation (LLM Guardrailed)
+DDR Generation (Guardrailed LLM)
         ↓
 Safety Evaluator (Hallucination Detection)
+```
 
-⭐ Key Features
-- Vision-First document understanding using multimodal LLMs
-- Structured evidence extraction from complex PDFs
-- Deterministic severity and confidence reasoning layer
-- Guardrailed natural-language DDR generation
-- AI safety evaluator for hallucination detection
-- Modular pipeline architecture
-- Production-oriented design with explainability focus
+---
 
-- 
+## ⭐ Key Features
 
-
-
-
+- **Vision-first** document understanding using multimodal LLMs
+- **Structured evidence extraction** from complex, image-heavy PDFs
+- **Deterministic severity scoring** — no black-box reasoning
+- **Guardrailed report generation** — evidence-only, no hallucination
+- **AI safety evaluator** — second model validates report fidelity
+- **Modular pipeline** — each stage is independently replaceable
+- **Production-oriented** — explainability and scalability built in
 
 ---
 
 ## 📂 Project Structure
-
+```
 DDR_REPORTER/
 │
-├── extraction.py
-├── confidence.py
-├── generation.py
-├── evaluator.py
-├── main.py
+├── extraction.py          # Vision LLM extraction logic
+├── confidence.py          # Severity + confidence scoring
+├── generation.py          # DDR report generation
+├── evaluator.py           # Hallucination safety evaluator
+├── main.py                # Pipeline entry point
 │
 ├── prompts/
-│ ├── inspection_prompt.txt
-│ ├── thermal_prompt.txt
-│ └── ddr_prompt.txt
+│   ├── inspection_prompt.txt
+│   ├── thermal_prompt.txt
+│   └── ddr_prompt.txt
 │
 ├── inputs/
-│ ├── inspection_report.pdf
-│ └── thermal_report.pdf
+│   ├── inspection_report.pdf
+│   └── thermal_report.pdf
 │
 ├── outputs/
-│ ├── merged_ddr_data.json
-│ ├── scored_merged_ddr_data.json
-│ ├── final_ddr.md
-│ └── evaluation.json
+│   ├── merged_ddr_data.json
+│   ├── scored_merged_ddr_data.json
+│   ├── final_ddr.md
+│   └── evaluation.json
 │
 ├── requirements.txt
 └── README.md
-
-
+```
 
 ---
 
 ## ⚙️ Installation
 
-### Clone Repo
-
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/hardik47278/DDR_REPORTER.git
 cd DDR_REPORTER
+```
 
-
+### 2. Create and Activate Virtual Environment
+```bash
+# Windows
 python -m venv venv
 venv\Scripts\activate
 
-
+# macOS/Linux
 python -m venv venv
-venv\Scripts\activate
+source venv/bin/activate
+```
 
-📌 Install Poppler (Required)
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
 
-This project uses pdftoppm for converting PDF pages into images.
+### 4. Install Poppler (Required for PDF → Image conversion)
 
-Download Poppler:
-https://github.com/oschwartz10612/poppler-windows/releases/
+This project uses `pdftoppm` from the Poppler library.
 
-🔑 Set OpenAI API Key
+- **Windows:** Download from [poppler-windows releases](https://github.com/oschwartz10612/poppler-windows/releases/) and add the `bin/` folder to your system PATH.
+- **macOS:** `brew install poppler`
+- **Linux:** `sudo apt-get install poppler-utils`
 
-PowerShell:
-
+### 5. Set Your OpenAI API Key
+```bash
+# Windows PowerShell
 $env:OPENAI_API_KEY="your_api_key_here"
 
-▶️ Run Pipeline
+# macOS/Linux
+export OPENAI_API_KEY="your_api_key_here"
+```
+
+---
+
+## ▶️ Run the Pipeline
+```bash
 python main.py
+```
 
+---
 
-🧩 Future Improvements Section
+## 🏗️ System Design
 
-- Vision-based room classification for stronger evidence alignment
-- Human-in-the-loop correction interface
-- Knowledge-based repair recommendation engine
-- Async document processing pipeline
-- Batch DDR generation system
-- Graph-based evidence linking
-- Historical inspection comparison using vector memory
+This system implements a **reliability-first hybrid AI architecture** for automated property diagnostic reporting. It combines multimodal document understanding (Vision LLMs) with deterministic reasoning layers to ensure structured evidence extraction, explainable severity scoring, and guardrailed report generation. A secondary AI evaluator validates report fidelity to reduce hallucination risk. The modular pipeline supports scalability, human-in-the-loop correction, and integration into production inspection workflows.
 
+---
 
+## 🔮 Roadmap
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- [ ] Vision-based room classification for stronger evidence alignment
+- [ ] Human-in-the-loop correction interface
+- [ ] Knowledge-based repair recommendation engine
+- [ ] Async document processing pipeline
+- [ ] Batch DDR generation system
+- [ ] Graph-based evidence linking
+- [ ] Historical inspection comparison via vector memory
